@@ -1,24 +1,22 @@
 // Reads Hearth's chores + members from Firestore, figures out what's due
-// today, and emails (or emails-as-text, via carrier gateways) whoever it's
-// assigned to. Runs once a day via the GitHub Actions workflow in
+// today, and emails and/or texts (via Twilio) whoever it's assigned to.
+// Runs once a day via the GitHub Actions workflow in
 // .github/workflows/chore-reminders.yml.
 
 import admin from 'firebase-admin';
 import nodemailer from 'nodemailer';
+import twilio from 'twilio';
 
 const TIMEZONE = 'America/New_York'; // change if your family isn't in Eastern time
+const DEFAULT_COUNTRY_CODE = '1'; // US — prefixed onto 10-digit numbers for Twilio's E.164 format
 
-const CARRIERS = {
-  'AT&T': 'txt.att.net',
-  'Verizon': 'vtext.com',
-  'T-Mobile': 'tmomail.net',
-  'Boost Mobile': 'sms.myboostmobile.com',
-  'Cricket': 'sms.cricketwireless.net',
-  'US Cellular': 'email.uscc.net',
-  'Google Fi': 'msg.fi.google.com',
-  'Metro by T-Mobile': 'mymetropcs.com',
-  'Visible': 'vtext.com',
-};
+function toE164(phone) {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 10) return `+${DEFAULT_COUNTRY_CODE}${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  if (phone.startsWith('+')) return phone;
+  return `+${digits}`; // best effort for anything already including a country code
+}
 
 function todayKeyInTz(tz) {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -83,6 +81,8 @@ async function main() {
     auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
   });
 
+  const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
   for (const member of membersWithChores) {
     const list = dueByMember[member.id];
     const plainList = list.join(', ');
@@ -97,16 +97,17 @@ async function main() {
       console.log(`Emailed ${member.name} at ${member.email}`);
     }
 
-    if ((member.notify === 'text' || member.notify === 'both') && member.phone && member.carrier && CARRIERS[member.carrier]) {
-      const digits = member.phone.replace(/\D/g, '');
-      const gatewayAddress = `${digits}@${CARRIERS[member.carrier]}`;
-      await transporter.sendMail({
-        from: `Hearth <${process.env.GMAIL_USER}>`,
-        to: gatewayAddress,
-        subject: '',
-        text: `Hearth chores today: ${plainList}`,
-      });
-      console.log(`Texted ${member.name} via ${member.carrier}`);
+    if ((member.notify === 'text' || member.notify === 'both') && member.phone) {
+      try {
+        await twilioClient.messages.create({
+          body: `DWORSKY chores today: ${plainList}. Reply STOP to opt out.`,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: toE164(member.phone),
+        });
+        console.log(`Texted ${member.name} via Twilio`);
+      } catch (err) {
+        console.error(`Failed to text ${member.name}: ${err.message}`);
+      }
     }
   }
 }
