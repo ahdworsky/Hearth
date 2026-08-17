@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMS Opt-In — DWORSKY</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 520px; margin: 40px auto; padding: 0 20px; color: #22273A; line-height: 1.6; }
+  h1 { font-size: 1.4rem; }
+  label { display: block; margin: 14px 0 4px; font-size: 0.9rem; font-weight: 600; }
+  input[type=text], input[type=tel] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+  .consent { display: flex; gap: 10px; align-items: flex-start; margin: 20px 0; font-size: 0.85rem; }
+  .consent input { margin-top: 4px; }
+  button { background: #2F7A6D; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+  #thanks { display: none; background: #EAF2F0; border-radius: 8px; padding: 16px; margin-top: 20px; }
+  footer { margin-top: 30px; font-size: 0.8rem; color: #666; }
+  footer a { color: #2F7A6D; }
+</style>
+</head>
+<body>
+  <h1>Join DWORSKY household chore reminders</h1>
+  <p>DWORSKY is a private household coordination app used by the Dworsky family. Use this form to opt in to receive SMS text reminders about chores assigned to you.</p>
+
+  <form id="optInForm">
+    <label for="name">Your name</label>
+    <input type="text" id="name" required placeholder="Jane Dworsky" />
+
+    <label for="phone">Mobile phone number</label>
+    <input type="tel" id="phone" required placeholder="7045551234" />
+
+    <div class="consent">
+      <input type="checkbox" id="consent" required />
+      <label for="consent" style="font-weight: normal; margin: 0;">
+        I agree to receive SMS text message chore reminders from DWORSKY. Message frequency varies, up to once per day. Message and data rates may apply. Reply STOP to opt out at any time, or HELP for help. See our
+        <a href="./privacy.html">Privacy Policy</a> and <a href="./terms.html">Terms and Conditions</a>.
+      </label>
+    </div>
+
+    <button type="submit">Opt in</button>
+  </form>
+
+  <div id="thanks">
+    <strong>Thanks!</strong> Your opt-in has been recorded. The household administrator will add your number to send you chore reminders going forward. Reply STOP to any message at any time to opt out.
+  </div>
+
+  <footer>
+    Questions? Contact the household administrator directly.<br />
+    <a href="./privacy.html">Privacy Policy</a> · <a href="./terms.html">Terms and Conditions</a>
+  </footer>
+
+  <script>
+    document.getElementById('optInForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      document.getElementById('optInForm').style.display = 'none';
+      document.getElementById('thanks').style.display = 'block';
+    });
+  </script>
+</body>
+</html>
